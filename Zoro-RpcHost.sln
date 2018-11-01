@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2003
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Zoro-RpcHost", "Zoro-RpcHost.csproj", "{89D513C2-E642-4B25-91C5-207827D21EE8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Zoro", "..\Zoro\Zoro\Zoro.csproj", "{1EE53D96-A25E-4D0C-A5B4-EE076B1F6DFC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{89D513C2-E642-4B25-91C5-207827D21EE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89D513C2-E642-4B25-91C5-207827D21EE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89D513C2-E642-4B25-91C5-207827D21EE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89D513C2-E642-4B25-91C5-207827D21EE8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1EE53D96-A25E-4D0C-A5B4-EE076B1F6DFC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1EE53D96-A25E-4D0C-A5B4-EE076B1F6DFC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1EE53D96-A25E-4D0C-A5B4-EE076B1F6DFC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1EE53D96-A25E-4D0C-A5B4-EE076B1F6DFC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5A64FD78-6F54-4949-B6C8-7436172E54B0}
+	EndGlobalSection
+EndGlobal
