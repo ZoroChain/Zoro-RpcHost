@@ -268,12 +268,12 @@ namespace Zoro.RpcHost
 
         void client_ServerConnected(object sender, TcpServerConnectedEventArgs e)
         {
-            Console.WriteLine(string.Format("TCP server {0} has connected.", e.RemoteEndPoint));
+            Console.WriteLine(string.Format("RPC server {0} has connected.", e.RemoteEndPoint));
         }
 
         void client_ServerDisconnected(object sender, TcpServerDisconnectedEventArgs e)
         {
-            Console.WriteLine(string.Format("TCP server {0} has disconnected.", e.RemoteEndPoint));
+            Console.WriteLine(string.Format("RPC server {0} has disconnected.", e.RemoteEndPoint));
         }
 
         void client_ServerDataReceived(object sender, TcpServerDataReceivedEventArgs e)
