@@ -1,0 +1,10 @@
+﻿{
+  "ApplicationConfiguration": {
+    "AgentAddress": "127.0.0.1",
+    "AgentPort": 20333,
+    "BindAddress": "127.0.0.1",
+    "Port": 20332,
+    "SslCert": "",
+    "SslCertPassword": ""
+  }
+}
