@@ -54,6 +54,15 @@ namespace Zoro.RpcHost
             return response;
         }
 
+        private static void _CreateErrorResponse(JObject response, int code, string message, JObject data = null)
+        {
+            response["error"] = new JObject();
+            response["error"]["code"] = code;
+            response["error"]["message"] = message;
+            if (data != null)
+                response["error"]["data"] = data;
+        }
+
         private static JObject CreateResponse(JObject id)
         {
             JObject response = new JObject();
@@ -180,9 +189,7 @@ namespace Zoro.RpcHost
                 Guid guid = Process(method, _params);
 
                 JObject response = CreateResponse(request["id"]);
-                WaitRpcTask(guid, context, response);
-
-                return response;
+                return WaitRpcTask(guid, context, response);
             }
             catch (Exception ex)
             {
@@ -196,18 +203,17 @@ namespace Zoro.RpcHost
 
         private Guid Process(string method, JArray _params)
         {
+            RpcRequestPayload payload = RpcRequestPayload.Create(method, _params.ToString());
+            EnqueueRequest(payload);
+            return payload.Guid;
             switch (method)
             {
                 case "invokescript":
                 case "sendrawtransaction":
                     {
-                        UInt160 chainHash = GetChainHash(_params[0]);
-                        RpcRequestPayload payload = RpcRequestPayload.Create(method, chainHash, _params[1].AsString().HexToBytes());
-                        EnqueueRequest(payload);
-                        return payload.Guid;
+
                     }
-                default:
-                    throw new RpcException(-32601, "Method not found");
+
             }
         }
 
@@ -287,6 +293,12 @@ namespace Zoro.RpcHost
 
                 OnReceiveRpcResult(payload);
             }
+            else if (msg.Command == "rpc-exception")
+            {
+                RpcExceptionPayload payload = msg.Payload.AsSerializable<RpcExceptionPayload>();
+
+                OnReceiveRpcException(payload);
+            }
         }
 
         private void EnqueueRequest(RpcRequestPayload payload)
@@ -303,7 +315,7 @@ namespace Zoro.RpcHost
             }
         }
 
-        private void WaitRpcTask(Guid guid, HttpContext context, JObject response)
+        private JObject WaitRpcTask(Guid guid, HttpContext context, JObject response)
         {
             RpcTask task = new RpcTask
             {
@@ -318,6 +330,8 @@ namespace Zoro.RpcHost
             SendRpcRequest();
 
             task.ResetEvent.WaitOne();
+
+            return task.Response;
         }
 
         public void OnReceiveRpcResult(RpcResponsePayload payload)
@@ -325,6 +339,20 @@ namespace Zoro.RpcHost
             if (RpcTasks.TryGetValue(payload.Guid, out RpcTask task))
             {
                 task.Response["result"] = payload.Result;
+                task.ResetEvent.Set();
+            }
+        }
+
+        public void OnReceiveRpcException(RpcExceptionPayload payload)
+        {
+            if (RpcTasks.TryGetValue(payload.Guid, out RpcTask task))
+            {
+#if DEBUG
+                _CreateErrorResponse(task.Response, payload.HResult, payload.Message, payload.StackTrace);
+#else
+                _CreateErrorResponse(task.Response, payload.HResult, payload.Message);
+#endif
+
                 task.ResetEvent.Set();
             }
         }
