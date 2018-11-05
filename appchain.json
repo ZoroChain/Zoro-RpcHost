@@ -1,0 +1,6 @@
+﻿{
+  "ProtocolConfiguration": {
+    "Path": "AppChain/{0}_{1}",
+    "Chains": []
+  }
+}
