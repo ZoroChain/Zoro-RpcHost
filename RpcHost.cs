@@ -206,15 +206,6 @@ namespace Zoro.RpcHost
             RpcRequestPayload payload = RpcRequestPayload.Create(method, _params.ToString());
             EnqueueRequest(payload);
             return payload.Guid;
-            switch (method)
-            {
-                case "invokescript":
-                case "sendrawtransaction":
-                    {
-
-                    }
-
-            }
         }
 
         public void StartWebHost(IPAddress bindAddress, int port, string sslCert = null, string password = null, string[] trustedAuthorities = null)
