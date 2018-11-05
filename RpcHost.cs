@@ -293,7 +293,7 @@ namespace Zoro.RpcHost
 
                 OnReceiveRpcResult(payload);
             }
-            else if (msg.Command == "rpc-exception")
+            else if (msg.Command == "rpc-error")
             {
                 RpcExceptionPayload payload = msg.Payload.AsSerializable<RpcExceptionPayload>();
 
