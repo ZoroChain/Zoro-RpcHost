@@ -11,6 +11,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cowboy.Sockets", "..\Cowboy
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Logrila.Logging", "..\CowboyLib\Logrila.Logging\Logrila.Logging.csproj", "{10F9E73B-66F2-478F-B36D-FCD28B45C41D}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Cowboy-Libs", "Cowboy-Libs", "{3BCA3A8F-6E4A-4637-AC88-405F4A41E4D4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Zoro-Projects", "Zoro-Projects", "{2E531D4D-E073-487C-BC69-C538DACDB261}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,6 +40,12 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{89D513C2-E642-4B25-91C5-207827D21EE8} = {2E531D4D-E073-487C-BC69-C538DACDB261}
+		{1EE53D96-A25E-4D0C-A5B4-EE076B1F6DFC} = {2E531D4D-E073-487C-BC69-C538DACDB261}
+		{90779C7D-ED58-4C10-BECD-1D5F10AF28BD} = {3BCA3A8F-6E4A-4637-AC88-405F4A41E4D4}
+		{10F9E73B-66F2-478F-B36D-FCD28B45C41D} = {3BCA3A8F-6E4A-4637-AC88-405F4A41E4D4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {5A64FD78-6F54-4949-B6C8-7436172E54B0}

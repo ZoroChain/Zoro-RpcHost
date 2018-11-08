@@ -1,6 +1,6 @@
 ﻿{
   "ProtocolConfiguration": {
-    "Magic": 58225482,
+    "Magic": 25440251,
     "AddressVersion": 23,
     "SecondsPerBlock": 1,
     "StandbyValidators": [
@@ -8,15 +8,6 @@
     "SeedList": [
     ],
     "SystemFee": {
-      "EnrollmentTransaction": 10,
-      "IssueTransaction": 5,
-      "PublishTransaction": 5,
-      "RegisterTransaction": 100
-    },
-    "AppChains": {
-      "Path": "AppChain/{0}_{1}",
-      "Chains": [
-      ]
     }
   }
 }

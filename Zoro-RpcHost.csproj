@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.0</TargetFramework>
-    <RootNamespace>Zoro_RpcAgent</RootNamespace>
+    <RootNamespace>Zoro.RpcHost</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
