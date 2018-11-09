@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Reflection;
 using System.Text;
+using System.Net;
 
 namespace Zoro.RpcHost
 {
@@ -18,7 +19,7 @@ namespace Zoro.RpcHost
         {
             Host = new RpcHost();
 
-            Host.StartWebHost(Settings.Default.BindAddress,
+            Host.StartWebHost(IPAddress.Any,
                 Settings.Default.Port,
                 sslCert: Settings.Default.SslCert,
                 password: Settings.Default.SslCertPassword);
