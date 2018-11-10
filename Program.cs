@@ -2,12 +2,49 @@
 using System.Reflection;
 using System.Text;
 using System.Net;
+using System.IO;
 
 namespace Zoro.RpcHost
 {
     class Program
     {
         static RpcHost Host;
+
+        private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            using (FileStream fs = new FileStream("error.log", FileMode.Create, FileAccess.Write, FileShare.None))
+            using (StreamWriter w = new StreamWriter(fs))
+                if (e.ExceptionObject is Exception ex)
+                {
+                    PrintErrorLogs(w, ex);
+                }
+                else
+                {
+                    w.WriteLine(e.ExceptionObject.GetType());
+                    w.WriteLine(e.ExceptionObject);
+                }
+        }
+
+        private static void PrintErrorLogs(StreamWriter writer, Exception ex)
+        {
+            writer.WriteLine(ex.GetType());
+            writer.WriteLine(ex.Message);
+            writer.WriteLine(ex.StackTrace);
+            if (ex is AggregateException ex2)
+            {
+                foreach (Exception inner in ex2.InnerExceptions)
+                {
+                    writer.WriteLine();
+                    PrintErrorLogs(writer, inner);
+                }
+            }
+            else if (ex.InnerException != null)
+            {
+                writer.WriteLine();
+                PrintErrorLogs(writer, ex.InnerException);
+            }
+        }
+
         static void Main(string[] args)
         {
             OnStart();
@@ -17,6 +54,8 @@ namespace Zoro.RpcHost
 
         static void OnStart()
         {
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
             Host = new RpcHost();
 
             Host.StartWebHost(IPAddress.Any,
