@@ -6,7 +6,6 @@ namespace Zoro.RpcHost
 {
     internal class Settings
     {
-        public IPAddress BindAddress { get; }
         public ushort Port { get; }
         public string SslCert { get; }
         public string SslCertPassword { get; }
@@ -23,7 +22,6 @@ namespace Zoro.RpcHost
 
         public Settings(IConfigurationSection section)
         {
-            this.BindAddress = IPAddress.Parse(section.GetSection("BindAddress").Value);
             this.Port = ushort.Parse(section.GetSection("Port").Value);
             this.SslCert = section.GetSection("SslCert").Value;
             this.SslCertPassword = section.GetSection("SslCertPassword").Value;
