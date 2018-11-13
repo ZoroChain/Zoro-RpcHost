@@ -36,11 +36,88 @@ namespace Zoro.RpcHost
 
         private IWebHost host;
         private TcpSocketClient client;
+        private FileStream logFile;
+        private StreamWriter logWriter;
+
+        private int numTasksPerSecond = 0;
+        private int totalTasks = 0;
+
         private readonly ConcurrentDictionary<Guid, RpcTask> RpcTasks = new ConcurrentDictionary<Guid, RpcTask>();
-        private readonly ConcurrentQueue<RpcRequestPayload> request_queue = new ConcurrentQueue<RpcRequestPayload>();
 
         public RpcHost()
         {
+        }
+
+        public void ShowState()
+        {
+            bool stop = false;
+            Interlocked.Exchange(ref numTasksPerSecond, 0);
+
+            Task.Run(() =>
+            {
+                while (!stop)
+                {
+                    Console.Clear();
+                    Console.WriteLine($"Tasks:{numTasksPerSecond}/{totalTasks}");
+                    Interlocked.Exchange(ref numTasksPerSecond, 0);
+                    Thread.Sleep(1000);
+                }
+            });
+            Console.ReadLine();
+            stop = true;
+        }
+
+        public void Dispose()
+        {
+            if (host != null)
+            {
+                host.Dispose();
+                host = null;
+            }
+
+            CloseLogFile();
+        }
+
+        public void EnableLog(bool enabled)
+        {
+            if (enabled)
+            {
+                OpenLogFile();
+            }
+            else
+            {
+                CloseLogFile();
+            }
+        }
+
+        private void OpenLogFile()
+        {
+            if (logFile == null)
+            {
+                logFile = new FileStream("log.txt", FileMode.Create, FileAccess.Write, FileShare.None);
+                logWriter = new StreamWriter(logFile);
+            }
+        }
+
+        private void CloseLogFile()
+        {
+            if (logFile != null)
+            {
+                logFile.Close();
+                logFile = null;
+                logWriter = null;
+            }
+        }
+
+        public void Log(string message)
+        {
+            if (logWriter != null)
+            {
+                DateTime now = DateTime.Now;
+                string line = $"[{now.TimeOfDay:hh\\:mm\\:ss\\.fff}] {message}";
+                Console.WriteLine(line);
+                logWriter.WriteLine(line);
+            }
         }
 
         private static JObject CreateErrorResponse(JObject id, int code, string message, JObject data = null)
@@ -69,15 +146,6 @@ namespace Zoro.RpcHost
             response["jsonrpc"] = "2.0";
             response["id"] = id;
             return response;
-        }
-
-        public void Dispose()
-        {
-            if (host != null)
-            {
-                host.Dispose();
-                host = null;
-            }
         }
 
         private static JObject GetRelayResult(RelayResultReason reason)
@@ -186,10 +254,8 @@ namespace Zoro.RpcHost
             {
                 string method = request["method"].AsString();
                 JArray _params = (JArray)request["params"];
-                Guid guid = Process(method, _params);
 
-                JObject response = CreateResponse(request["id"]);
-                return WaitRpcTask(guid, context, response);
+                return Process(context, request, method, _params);
             }
             catch (Exception ex)
             {
@@ -201,11 +267,35 @@ namespace Zoro.RpcHost
             }
         }
 
-        private Guid Process(string method, JArray _params)
+        private JObject Process(HttpContext context, JObject request, string method, JArray _params)
         {
             RpcRequestPayload payload = RpcRequestPayload.Create(method, _params.ToString());
-            EnqueueRequest(payload);
-            return payload.Guid;
+
+            JObject response = CreateResponse(request["id"]);
+
+            RpcTask task = new RpcTask
+            {
+                Context = context,
+                Response = response,
+                ResetEvent = new AutoResetEvent(false),
+            };
+
+            if (RpcTasks.TryAdd(payload.Guid, task))
+            {
+                Message msg = Message.Create("rpc-request", payload.ToArray());
+                client.Send(msg.ToArray());
+
+                Log($"RPC request sended, method:{payload.Method}, guid:{payload.Guid}");
+
+                task.ResetEvent.WaitOne();
+
+                Interlocked.Increment(ref numTasksPerSecond);
+                Interlocked.Increment(ref totalTasks);
+
+                Log($"RPC response received, method:{payload.Method}, guid:{payload.Guid}");
+            }
+
+            return task.Response;
         }
 
         public void StartWebHost(IPAddress bindAddress, int port, string sslCert = null, string password = null, string[] trustedAuthorities = null)
@@ -292,39 +382,6 @@ namespace Zoro.RpcHost
             }
         }
 
-        private void EnqueueRequest(RpcRequestPayload payload)
-        {
-            request_queue.Enqueue(payload);
-        }
-
-        private void SendRpcRequest()
-        {
-            if (request_queue.TryDequeue(out RpcRequestPayload payload))
-            {
-                Message msg = Message.Create("rpc-request", payload.ToArray());
-                client.Send(msg.ToArray());
-            }
-        }
-
-        private JObject WaitRpcTask(Guid guid, HttpContext context, JObject response)
-        {
-            RpcTask task = new RpcTask
-            {
-                Context = context,
-                Response = response,
-                ResetEvent = new AutoResetEvent(false),
-
-            };
-
-            RpcTasks.TryAdd(guid, task);
-
-            SendRpcRequest();
-
-            task.ResetEvent.WaitOne();
-
-            return task.Response;
-        }
-
         public void OnReceiveRpcResult(RpcResponsePayload payload)
         {
             if (RpcTasks.TryGetValue(payload.Guid, out RpcTask task))
@@ -343,6 +400,7 @@ namespace Zoro.RpcHost
 #else
                 _CreateErrorResponse(task.Response, payload.HResult, payload.Message);
 #endif
+                Log($"RPC exception received, errcode:{payload.HResult}, message:{payload.Message}, guid:{payload.Guid}");
 
                 task.ResetEvent.Set();
             }

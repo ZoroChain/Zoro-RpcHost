@@ -47,14 +47,25 @@ namespace Zoro.RpcHost
 
         static void Main(string[] args)
         {
-            OnStart();
+            OnStart(args);
             RunConsole();
             OnStop();
         }
 
-        static void OnStart()
+        static void OnStart(string[] args)
         {
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
+            bool disableLog = false;
+            for (int i = 0; i < args.Length; i++)
+                switch (args[i])
+                {
+                    case "/disableLog":
+                    case "--disableLog":
+                    case "-logoff":
+                        disableLog = true;
+                        break;
+                }
 
             Host = new RpcHost();
 
@@ -64,6 +75,8 @@ namespace Zoro.RpcHost
                 password: Settings.Default.SslCertPassword);
 
             Host.ConnectToAgent(Settings.Default.AgentAddress, Settings.Default.AgentPort);
+
+            Host.EnableLog(!disableLog);
         }
 
         static void OnStop()
@@ -121,6 +134,21 @@ namespace Zoro.RpcHost
                     return false;
                 case "version":
                     Console.WriteLine(Assembly.GetEntryAssembly().GetName().Version);
+                    return true;
+                case "show":
+                    return OnShowCommand(args);
+                default:
+                    Console.WriteLine("error: command not found " + args[0]);
+                    return true;
+            }
+        }
+
+        static bool OnShowCommand(string[] args)
+        {
+            switch (args[1].ToLower())
+            {
+                case "state":
+                    Host.ShowState();
                     return true;
                 default:
                     Console.WriteLine("error: command not found " + args[0]);
