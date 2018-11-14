@@ -378,7 +378,7 @@ namespace Zoro.RpcHost
 
         public void OnReceiveRpcResult(RpcResponsePayload payload)
         {
-            if (RpcTasks.TryGetValue(payload.Guid, out RpcTask task))
+            if (RpcTasks.TryRemove(payload.Guid, out RpcTask task))
             {
                 task.Response["result"] = payload.Result;
                 task.ResetEvent.Set();
@@ -387,7 +387,7 @@ namespace Zoro.RpcHost
 
         public void OnReceiveRpcException(RpcExceptionPayload payload)
         {
-            if (RpcTasks.TryGetValue(payload.Guid, out RpcTask task))
+            if (RpcTasks.TryRemove(payload.Guid, out RpcTask task))
             {
 #if DEBUG
                 _CreateErrorResponse(task.Response, payload.HResult, payload.Message, payload.StackTrace);
