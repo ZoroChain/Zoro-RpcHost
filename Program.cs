@@ -69,14 +69,14 @@ namespace Zoro.RpcHost
 
             Host = new RpcHost();
 
+            Host.EnableLog(!disableLog);
+
             Host.StartWebHost(IPAddress.Any,
                 Settings.Default.Port,
                 sslCert: Settings.Default.SslCert,
                 password: Settings.Default.SslCertPassword);
 
             Host.ConnectToAgent(Settings.Default.AgentAddress, Settings.Default.AgentPort);
-
-            Host.EnableLog(!disableLog);
         }
 
         static void OnStop()
