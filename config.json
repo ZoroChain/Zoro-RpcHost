@@ -1,6 +1,6 @@
 ﻿{
   "ApplicationConfiguration": {
-    "AgentAddress": "115.159.53.39",
+    "AgentAddress": "127.0.0.1",
     "AgentPort": 20333,
     "TimeoutSeconds": 15,
     "Port": 20332,
