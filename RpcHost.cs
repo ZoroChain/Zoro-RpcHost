@@ -29,6 +29,7 @@ namespace Zoro.RpcHost
     {
         private class RpcTask
         {
+            public int TaskId;
             public HttpContext Context;
             public JObject Response;
             public AutoResetEvent ResetEvent;
@@ -36,16 +37,18 @@ namespace Zoro.RpcHost
 
         private IWebHost host;
         private TcpSocketClient client;
-        private FileStream logFile;
-        private StreamWriter logWriter;
+        private Logger logger;
 
+        private TimeSpan timeoutSpan;
         private int numTasksPerSecond = 0;
         private int totalTasks = 0;
+        private int taskId = 0;
 
         private readonly ConcurrentDictionary<Guid, RpcTask> RpcTasks = new ConcurrentDictionary<Guid, RpcTask>();
 
         public RpcHost()
         {
+            timeoutSpan = TimeSpan.FromSeconds(Settings.Default.TimeoutSeconds);
         }
 
         public void ShowState()
@@ -75,49 +78,35 @@ namespace Zoro.RpcHost
                 host = null;
             }
 
-            CloseLogFile();
+            if (logger != null)
+            {
+                logger.Dispose();
+                logger = null;
+            }
         }
 
         public void EnableLog(bool enabled)
         {
             if (enabled)
             {
-                OpenLogFile();
+                if (logger == null)
+                {
+                    logger = new Logger("Log.txt");
+                }
             }
             else
             {
-                CloseLogFile();
-            }
-        }
-
-        private void OpenLogFile()
-        {
-            if (logFile == null)
-            {
-                logFile = new FileStream("log.txt", FileMode.Create, FileAccess.Write, FileShare.None);
-                logWriter = new StreamWriter(logFile);
-            }
-        }
-
-        private void CloseLogFile()
-        {
-            if (logFile != null)
-            {
-                logFile.Close();
-                logFile = null;
-                logWriter = null;
+                if (logger != null)
+                {
+                    logger.Dispose();
+                    logger = null;
+                }
             }
         }
 
         public void Log(string message)
         {
-            if (logWriter != null)
-            {
-                DateTime now = DateTime.Now;
-                string line = $"[{now.TimeOfDay:hh\\:mm\\:ss\\.fff}] {message}";
-                Console.WriteLine(line);
-                logWriter.WriteLine(line);
-            }
+            logger?.Log(message);
         }
 
         private static JObject CreateErrorResponse(JObject id, int code, string message, JObject data = null)
@@ -275,6 +264,7 @@ namespace Zoro.RpcHost
 
             RpcTask task = new RpcTask
             {
+                TaskId = Interlocked.Increment(ref taskId),
                 Context = context,
                 Response = response,
                 ResetEvent = new AutoResetEvent(false),
@@ -285,14 +275,18 @@ namespace Zoro.RpcHost
                 Message msg = Message.Create("rpc-request", payload.ToArray());
                 client.Send(msg.ToArray());
 
-                Log($"RPC request sended, method:{payload.Method}, guid:{payload.Guid}");
+                Log($"send:{task.TaskId}, method:{payload.Method}");
 
-                task.ResetEvent.WaitOne();
+                DateTime beginTime = DateTime.UtcNow;
+
+                task.ResetEvent.WaitOne(timeoutSpan);
+
+                TimeSpan span = DateTime.UtcNow - beginTime;
 
                 Interlocked.Increment(ref numTasksPerSecond);
                 Interlocked.Increment(ref totalTasks);
 
-                Log($"RPC response received, method:{payload.Method}, guid:{payload.Guid}");
+                Log($"recv:{task.TaskId}, time:{span:hh\\:mm\\:ss\\.ff}");
             }
 
             return task.Response;
