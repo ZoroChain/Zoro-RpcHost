@@ -17,7 +17,7 @@ namespace Zoro.RpcHost
 
         static Settings()
         {
-            IConfigurationSection section = new ConfigurationBuilder().AddJsonFile("config.json").Build().GetSection("ApplicationConfiguration");
+            IConfigurationSection section = new ConfigurationBuilder().AddJsonFile("rpchost.json").Build().GetSection("ApplicationConfiguration");
             Default = new Settings(section);
         }
 

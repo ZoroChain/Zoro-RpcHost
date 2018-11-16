@@ -10,7 +10,7 @@ namespace Zoro.RpcHost
 
         public Logger(string path)
         {
-            stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
+            stream = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.None);
             writer = new StreamWriter(stream);
         }
 

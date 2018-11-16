@@ -72,6 +72,8 @@ namespace Zoro.RpcHost
 
         public void Dispose()
         {
+            Log("Stopping RpcHost");
+
             if (host != null)
             {
                 host.Dispose();
@@ -91,7 +93,9 @@ namespace Zoro.RpcHost
             {
                 if (logger == null)
                 {
-                    logger = new Logger("Log.txt");
+                    DateTime now = DateTime.Now;
+                    string filename = $"rpchost_{now:yyyy-MM-dd}.log";
+                    logger = new Logger(filename);
                 }
             }
             else
