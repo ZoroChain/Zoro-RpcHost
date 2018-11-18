@@ -179,58 +179,77 @@ namespace Zoro.RpcHost
             context.Response.Headers["Access-Control-Max-Age"] = "31536000";
             if (context.Request.Method != "GET" && context.Request.Method != "POST") return;
             JObject request = null;
-            if (context.Request.Method == "GET")
+            JObject response = null;
+            string message = "unknown error";
+
+            try
             {
-                string jsonrpc = context.Request.Query["jsonrpc"];
-                string id = context.Request.Query["id"];
-                string method = context.Request.Query["method"];
-                string _params = context.Request.Query["params"];
-                if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(method) && !string.IsNullOrEmpty(_params))
+
+                if (context.Request.Method == "GET")
                 {
-                    try
+                    string jsonrpc = context.Request.Query["jsonrpc"];
+                    string id = context.Request.Query["id"];
+                    string method = context.Request.Query["method"];
+                    string _params = context.Request.Query["params"];
+
+                    if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(method) && !string.IsNullOrEmpty(_params))
                     {
-                        _params = Encoding.UTF8.GetString(Convert.FromBase64String(_params));
+                        try
+                        {
+                            _params = Encoding.UTF8.GetString(Convert.FromBase64String(_params));
+                        }
+                        catch (FormatException fe)
+                        {
+                            message = fe.Message;
+                        }
+                        request = new JObject();
+                        if (!string.IsNullOrEmpty(jsonrpc))
+                            request["jsonrpc"] = jsonrpc;
+                        request["id"] = id;
+                        request["method"] = method;
+                        request["params"] = JObject.Parse(_params);
                     }
-                    catch (FormatException) { }
-                    request = new JObject();
-                    if (!string.IsNullOrEmpty(jsonrpc))
-                        request["jsonrpc"] = jsonrpc;
-                    request["id"] = id;
-                    request["method"] = method;
-                    request["params"] = JObject.Parse(_params);
                 }
-            }
-            else if (context.Request.Method == "POST")
-            {
-                using (StreamReader reader = new StreamReader(context.Request.Body))
+                else if (context.Request.Method == "POST")
                 {
-                    try
+                    using (StreamReader reader = new StreamReader(context.Request.Body))
                     {
-                        request = JObject.Parse(reader);
+                        try
+                        {
+                            request = JObject.Parse(reader);
+                        }
+                        catch (FormatException fe)
+                        {
+                            message = fe.Message;
+                        }
                     }
-                    catch (FormatException) { }
                 }
-            }
-            JObject response;
-            if (request == null)
-            {
-                response = CreateErrorResponse(null, -32700, "Parse error");
-            }
-            else if (request is JArray array)
-            {
-                if (array.Count == 0)
+
+                if (request == null)
                 {
-                    response = CreateErrorResponse(request["id"], -32600, "Invalid Request");
+                    response = CreateErrorResponse(null, -32700, string.Format("Parse error: {0}", message));
+                }
+                else if (request is JArray array)
+                {
+                    if (array.Count == 0)
+                    {
+                        response = CreateErrorResponse(request["id"], -32600, "Invalid Request");
+                    }
+                    else
+                    {
+                        response = array.Select(p => ProcessRequest(context, p)).Where(p => p != null).ToArray();
+                    }
                 }
                 else
                 {
-                    response = array.Select(p => ProcessRequest(context, p)).Where(p => p != null).ToArray();
+                    response = ProcessRequest(context, request);
                 }
             }
-            else
+            catch (Exception ex)
             {
-                response = ProcessRequest(context, request);
+                response = CreateErrorResponse(request["id"], -32700, string.Format("Exception: {0}", ex.Message));
             }
+
             if (response == null || (response as JArray)?.Count == 0) return;
             context.Response.ContentType = "application/json-rpc";
             await context.Response.WriteAsync(response.ToString(), Encoding.UTF8);
