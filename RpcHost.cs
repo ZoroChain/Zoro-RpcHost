@@ -298,7 +298,7 @@ namespace Zoro.RpcHost
                 Message msg = Message.Create("rpc-request", payload.ToArray());
                 client.Send(msg.ToArray());
 
-                Log($"send:{task.TaskId}, method:{payload.Method}");
+                //Log($"send:{task.TaskId}, method:{payload.Method}");
 
                 DateTime beginTime = DateTime.UtcNow;
 
@@ -309,7 +309,7 @@ namespace Zoro.RpcHost
                 Interlocked.Increment(ref numTasksPerSecond);
                 Interlocked.Increment(ref totalTasks);
 
-                Log($"recv:{task.TaskId}, time:{span:hh\\:mm\\:ss\\.ff}");
+                //Log($"recv:{task.TaskId}, time:{span:hh\\:mm\\:ss\\.ff}");
             }
 
             return task.Response;
