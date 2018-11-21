@@ -41,6 +41,7 @@ namespace Zoro.RpcHost
 
         private TimeSpan timeoutSpan;
         private int numTasksPerSecond = 0;
+        private int peakTasksPerSecond = 0;
         private int totalTasks = 0;
         private int taskId = 0;
 
@@ -61,7 +62,11 @@ namespace Zoro.RpcHost
                 while (!stop)
                 {
                     Console.Clear();
-                    Console.WriteLine($"Tasks:{numTasksPerSecond}/{totalTasks}");
+                    Console.WriteLine($"Tasks:{numTasksPerSecond}/{totalTasks}, peak:{peakTasksPerSecond}");
+                    if (numTasksPerSecond > peakTasksPerSecond)
+                    {
+                        Interlocked.Exchange(ref peakTasksPerSecond, numTasksPerSecond);
+                    }
                     Interlocked.Exchange(ref numTasksPerSecond, 0);
                     Thread.Sleep(1000);
                 }
