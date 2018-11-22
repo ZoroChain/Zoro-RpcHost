@@ -42,6 +42,7 @@ namespace Zoro.RpcHost
         private TimeSpan timeoutSpan;
         private int numTasksPerSecond = 0;
         private int peakTasksPerSecond = 0;
+        private int waitingTasks = 0;
         private int totalTasks = 0;
         private int taskId = 0;
 
@@ -62,7 +63,7 @@ namespace Zoro.RpcHost
                 while (!stop)
                 {
                     Console.Clear();
-                    Console.WriteLine($"Tasks:{numTasksPerSecond}/{totalTasks}, peak:{peakTasksPerSecond}");
+                    Console.WriteLine($"Tasks:{numTasksPerSecond}/{totalTasks}, waiting:{waitingTasks}, peak:{peakTasksPerSecond}");
                     if (numTasksPerSecond > peakTasksPerSecond)
                     {
                         Interlocked.Exchange(ref peakTasksPerSecond, numTasksPerSecond);
@@ -300,6 +301,8 @@ namespace Zoro.RpcHost
 
             if (RpcTasks.TryAdd(payload.Guid, task))
             {
+                Interlocked.Increment(ref waitingTasks);
+
                 Message msg = Message.Create("rpc-request", payload.ToArray());
                 client.Send(msg.ToArray());
 
@@ -408,6 +411,8 @@ namespace Zoro.RpcHost
         {
             if (RpcTasks.TryRemove(payload.Guid, out RpcTask task))
             {
+                Interlocked.Decrement(ref waitingTasks);
+
                 task.Response["result"] = payload.Result;
                 task.ResetEvent.Set();
             }
@@ -417,6 +422,7 @@ namespace Zoro.RpcHost
         {
             if (RpcTasks.TryRemove(payload.Guid, out RpcTask task))
             {
+                Interlocked.Decrement(ref waitingTasks);
 #if DEBUG
                 _CreateErrorResponse(task.Response, payload.HResult, payload.Message, payload.StackTrace);
 #else
