@@ -39,11 +39,12 @@ namespace Zoro.RpcHost
         private TcpSocketClient client;
         private Logger logger;
 
-        private TimeSpan timeoutSpan;
-        private int numTasksPerSecond = 0;
-        private int peakTasksPerSecond = 0;
-        private int waitingTasks = 0;
-        private int totalTasks = 0;
+        private TimeSpan timeoutSpan;           // 等待处理的超时时间
+        private long longestTicks = 0;          // 单个任务最久的完成时间
+        private int finishedPerSecond = 0;      // 上一秒完成的任务数量
+        private int peakFinishedPerSecond = 0;  // 每秒完成的任务数量的峰值
+        private int waitingTasks = 0;           // 正在处理中的任务数量
+        private int totalTasks = 0;             // 累积完成的任务总数量
         private int taskId = 0;
 
         private readonly ConcurrentDictionary<Guid, RpcTask> RpcTasks = new ConcurrentDictionary<Guid, RpcTask>();
@@ -56,19 +57,20 @@ namespace Zoro.RpcHost
         public void ShowState()
         {
             bool stop = false;
-            Interlocked.Exchange(ref numTasksPerSecond, 0);
+            Interlocked.Exchange(ref finishedPerSecond, 0);
 
             Task.Run(() =>
             {
                 while (!stop)
                 {
                     Console.Clear();
-                    Console.WriteLine($"Tasks:{numTasksPerSecond}/{totalTasks}, waiting:{waitingTasks}, peak:{peakTasksPerSecond}");
-                    if (numTasksPerSecond > peakTasksPerSecond)
+                    Console.WriteLine($"Tasks:{finishedPerSecond}/{totalTasks}, waiting:{waitingTasks}, peak:{peakFinishedPerSecond}, longest:{TimeSpan.FromTicks(longestTicks)}");
+                    // 更新上一秒完成任务数量的峰值
+                    if (finishedPerSecond > peakFinishedPerSecond)
                     {
-                        Interlocked.Exchange(ref peakTasksPerSecond, numTasksPerSecond);
+                        Interlocked.Exchange(ref peakFinishedPerSecond, finishedPerSecond);
                     }
-                    Interlocked.Exchange(ref numTasksPerSecond, 0);
+                    Interlocked.Exchange(ref finishedPerSecond, 0);
                     Thread.Sleep(1000);
                 }
             });
@@ -314,8 +316,14 @@ namespace Zoro.RpcHost
 
                 TimeSpan span = DateTime.UtcNow - beginTime;
 
-                Interlocked.Increment(ref numTasksPerSecond);
+                Interlocked.Increment(ref finishedPerSecond);
                 Interlocked.Increment(ref totalTasks);
+
+                // 更新单个任务最久完成时间
+                if (span.Ticks > longestTicks)
+                {
+                    Interlocked.Exchange(ref longestTicks, span.Ticks);
+                }
 
                 //Log($"recv:{task.TaskId}, time:{span:hh\\:mm\\:ss\\.ff}");
             }
