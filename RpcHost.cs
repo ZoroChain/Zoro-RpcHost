@@ -39,7 +39,6 @@ namespace Zoro.RpcHost
         private TcpSocketClient client;
         private Logger logger;
 
-        private TimeSpan timeoutSpan;           // 等待处理的超时时间
         private long longestTicks = 0;          // 单个任务最久的完成时间
         private int finishedPerSecond = 0;      // 上一秒完成的任务数量
         private int peakFinishedPerSecond = 0;  // 每秒完成的任务数量的峰值
@@ -51,7 +50,6 @@ namespace Zoro.RpcHost
 
         public RpcHost()
         {
-            timeoutSpan = TimeSpan.FromSeconds(Settings.Default.TimeoutSeconds);
         }
 
         public void ShowState()
@@ -312,7 +310,7 @@ namespace Zoro.RpcHost
 
                 DateTime beginTime = DateTime.UtcNow;
 
-                task.ResetEvent.WaitOne(timeoutSpan);
+                task.ResetEvent.WaitOne();
 
                 TimeSpan span = DateTime.UtcNow - beginTime;
 
