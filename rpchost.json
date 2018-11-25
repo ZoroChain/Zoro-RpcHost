@@ -2,7 +2,6 @@
   "ApplicationConfiguration": {
     "AgentAddress": "127.0.0.1",
     "AgentPort": 20333,
-    "TimeoutSeconds": 15,
     "Port": 20332,
     "SslCert": "",
     "SslCertPassword": ""
