@@ -46,6 +46,8 @@ namespace Zoro.RpcHost
         private int totalTasks = 0;             // 累积完成的任务总数量
         private int taskId = 0;
 
+        private int logLevel = 0;
+
         private readonly ConcurrentDictionary<Guid, RpcTask> RpcTasks = new ConcurrentDictionary<Guid, RpcTask>();
 
         public RpcHost()
@@ -93,8 +95,10 @@ namespace Zoro.RpcHost
             }
         }
 
-        public void EnableLog(bool enabled)
+        public void EnableLog(bool enabled, int logLevel)
         {
+            this.logLevel = logLevel;
+
             if (enabled)
             {
                 if (logger == null)
@@ -114,9 +118,12 @@ namespace Zoro.RpcHost
             }
         }
 
-        public void Log(string message)
+        public void Log(string message, int lv = 0)
         {
-            logger?.Log(message);
+            if (lv <= logLevel)
+            {
+                logger?.Log(message);
+            }
         }
 
         private static JObject CreateErrorResponse(JObject id, int code, string message, JObject data = null)
@@ -306,7 +313,7 @@ namespace Zoro.RpcHost
                 Message msg = Message.Create("rpc-request", payload.ToArray());
                 client.Send(msg.ToArray());
 
-                Log($"send:{task.TaskId}, method:{payload.Method}");
+                Log($"send:{task.TaskId}, method:{payload.Method}", 1);
 
                 DateTime beginTime = DateTime.UtcNow;
 
@@ -323,7 +330,7 @@ namespace Zoro.RpcHost
                     Interlocked.Exchange(ref longestTicks, span.Ticks);
                 }
 
-                Log($"recv:{task.TaskId}, time:{span:hh\\:mm\\:ss\\.ff}");
+                Log($"recv:{task.TaskId}, time:{span:hh\\:mm\\:ss\\.ff}", 1);
             }
 
             return task.Response;

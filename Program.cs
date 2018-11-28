@@ -59,6 +59,7 @@ namespace Zoro.RpcHost
             Stream inputStream = Console.OpenStandardInput(bufferSize);
             Console.SetIn(new StreamReader(inputStream, Console.InputEncoding, false, bufferSize));
 
+            int logLevel = 0;
             bool disableLog = false;
             for (int i = 0; i < args.Length; i++)
                 switch (args[i])
@@ -68,11 +69,14 @@ namespace Zoro.RpcHost
                     case "-logoff":
                         disableLog = true;
                         break;
+                    case "/logdetail":
+                        logLevel = 1;
+                        break;
                 }
 
             Host = new RpcHost();
 
-            Host.EnableLog(!disableLog);
+            Host.EnableLog(!disableLog, logLevel);
 
             Host.StartWebHost(IPAddress.Any,
                 Settings.Default.Port,
