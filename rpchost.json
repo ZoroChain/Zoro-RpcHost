@@ -5,6 +5,7 @@
     "Port": 20333,
     "SslCert": "",
     "SslCertPassword": "",
-    "TimeoutSeconds": 30
+    "TimeoutSeconds": 30,
+    "MinThreadCount": 100
   }
 }

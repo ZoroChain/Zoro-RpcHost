@@ -12,6 +12,7 @@ namespace Zoro.RpcHost
         public IPAddress AgentAddress { get; }
         public ushort AgentPort { get; }
         public int TimeoutSeconds { get; }
+        public int MinThreadCount { get; }
 
         public static Settings Default { get; }
 
@@ -29,6 +30,7 @@ namespace Zoro.RpcHost
             this.AgentAddress = IPAddress.Parse(section.GetSection("AgentAddress").Value);
             this.AgentPort = ushort.Parse(section.GetSection("AgentPort").Value);
             this.TimeoutSeconds = int.Parse(section.GetSection("TimeoutSeconds").Value);
+            this.MinThreadCount = int.Parse(section.GetSection("MinThreadCount").Value);
         }
     }
 }

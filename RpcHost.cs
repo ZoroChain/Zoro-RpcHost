@@ -354,6 +354,14 @@ namespace Zoro.RpcHost
 
         public void StartWebHost(IPAddress bindAddress, int port, string sslCert = null, string password = null, string[] trustedAuthorities = null)
         {
+            int minThreadCount = Settings.Default.MinThreadCount;
+            ThreadPool.GetMinThreads(out int minWorkerThreads, out int minCPortThreads);
+            ThreadPool.GetMaxThreads(out int maxWorkerThreads, out int maxCPortThreads);
+            ThreadPool.SetMinThreads(minThreadCount, minCPortThreads);
+
+            Log($"MinThreadCount:{minWorkerThreads}=>{minThreadCount}, {minCPortThreads}");
+            Log($"MaxThreadCount:{maxWorkerThreads} {maxCPortThreads}");
+
             host = new WebHostBuilder().UseKestrel(options => options.Listen(bindAddress, port, listenOptions =>
             {
                 if (string.IsNullOrEmpty(sslCert)) return;
