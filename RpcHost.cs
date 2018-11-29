@@ -39,11 +39,13 @@ namespace Zoro.RpcHost
         private TcpSocketClient client;
         private Logger logger;
 
+        private TimeSpan timeoutSpan;           // 等待处理的超时时间
         private long longestTicks = 0;          // 单个任务最久的完成时间
         private int finishedPerSecond = 0;      // 上一秒完成的任务数量
         private int peakFinishedPerSecond = 0;  // 每秒完成的任务数量的峰值
         private int waitingTasks = 0;           // 正在处理中的任务数量
         private int totalTasks = 0;             // 累积完成的任务总数量
+        private int timeoutTasks = 0;           // 累积的超时任务总数
         private int taskId = 0;
 
         private int logLevel = 0;
@@ -52,6 +54,7 @@ namespace Zoro.RpcHost
 
         public RpcHost()
         {
+            timeoutSpan = TimeSpan.FromSeconds(Settings.Default.TimeoutSeconds);
         }
 
         public void ShowState()
@@ -64,7 +67,7 @@ namespace Zoro.RpcHost
                 while (!stop)
                 {
                     Console.Clear();
-                    Console.WriteLine($"Tasks:{finishedPerSecond}/{totalTasks}, waiting:{waitingTasks}, peak:{peakFinishedPerSecond}, longest:{TimeSpan.FromTicks(longestTicks)}");
+                    Console.WriteLine($"Tasks:{finishedPerSecond}/{totalTasks}, waiting:{waitingTasks}, peak:{peakFinishedPerSecond}, timeout:{timeoutTasks}, longest:{TimeSpan.FromTicks(longestTicks)}");
                     // 更新上一秒完成任务数量的峰值
                     if (finishedPerSecond > peakFinishedPerSecond)
                     {
@@ -306,6 +309,7 @@ namespace Zoro.RpcHost
                 ResetEvent = new AutoResetEvent(false),
             };
 
+            bool signaled = false;
             if (RpcTasks.TryAdd(payload.Guid, task))
             {
                 Interlocked.Increment(ref waitingTasks);
@@ -317,7 +321,7 @@ namespace Zoro.RpcHost
 
                 DateTime beginTime = DateTime.UtcNow;
 
-                task.ResetEvent.WaitOne();
+                signaled = task.ResetEvent.WaitOne(timeoutSpan);
 
                 TimeSpan span = DateTime.UtcNow - beginTime;
 
@@ -331,6 +335,18 @@ namespace Zoro.RpcHost
                 }
 
                 Log($"recv:{task.TaskId}, time:{span:hh\\:mm\\:ss\\.ff}", 1);
+            }
+
+            // 等待超时
+            if (!signaled)
+            {
+                RpcTasks.TryRemove(payload.Guid, out RpcTask _);
+                
+                Interlocked.Decrement(ref waitingTasks);
+
+                Interlocked.Increment(ref timeoutTasks);
+
+                _CreateErrorResponse(task.Response, 0, $"rpc request is time-out, method:{payload.Method}");
             }
 
             return task.Response;

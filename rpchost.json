@@ -4,6 +4,7 @@
     "AgentPort": 10001,
     "Port": 10000,
     "SslCert": "",
-    "SslCertPassword": ""
+    "SslCertPassword": "",
+    "TimeoutSeconds": 30
   }
 }

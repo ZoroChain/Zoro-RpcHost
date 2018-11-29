@@ -11,6 +11,7 @@ namespace Zoro.RpcHost
         public string SslCertPassword { get; }
         public IPAddress AgentAddress { get; }
         public ushort AgentPort { get; }
+        public int TimeoutSeconds { get; }
 
         public static Settings Default { get; }
 
@@ -27,6 +28,7 @@ namespace Zoro.RpcHost
             this.SslCertPassword = section.GetSection("SslCertPassword").Value;
             this.AgentAddress = IPAddress.Parse(section.GetSection("AgentAddress").Value);
             this.AgentPort = ushort.Parse(section.GetSection("AgentPort").Value);
+            this.TimeoutSeconds = int.Parse(section.GetSection("TimeoutSeconds").Value);
         }
     }
 }
