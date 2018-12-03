@@ -83,13 +83,15 @@ namespace Zoro.RpcHost
 
         public void Dispose()
         {
-            Log("Stopping RpcHost");
+            Log("Dispose web host");
 
             if (host != null)
             {
                 host.Dispose();
                 host = null;
             }
+
+            Log("Dispose logger");
 
             if (logger != null)
             {
