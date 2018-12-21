@@ -59,12 +59,12 @@ namespace Zoro.RpcHost
 
         public void ShowState()
         {
-            bool stop = false;
+            CancellationTokenSource cts = new CancellationTokenSource();
             Interlocked.Exchange(ref finishedPerSecond, 0);
 
             Task.Run(() =>
             {
-                while (!stop)
+                while (!cts.Token.IsCancellationRequested)
                 {
                     Console.Clear();
                     Console.WriteLine($"Tasks:{finishedPerSecond}/{totalTasks}, waiting:{waitingTasks}, peak:{peakFinishedPerSecond}, timeout:{timeoutTasks}, longest:{TimeSpan.FromTicks(longestTicks)}");
@@ -78,7 +78,7 @@ namespace Zoro.RpcHost
                 }
             });
             Console.ReadLine();
-            stop = true;
+            cts.Cancel();
         }
 
         public void Dispose()
