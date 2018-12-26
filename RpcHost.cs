@@ -49,11 +49,13 @@ namespace Zoro.RpcHost
         private int taskId = 0;
 
         private int logLevel = 0;
+        private bool soloTest = false;
 
         private readonly ConcurrentDictionary<Guid, RpcTask> RpcTasks = new ConcurrentDictionary<Guid, RpcTask>();
 
-        public RpcHost()
+        public RpcHost(bool soloTest)
         {
+            this.soloTest = soloTest;
             timeoutSpan = TimeSpan.FromSeconds(Settings.Default.TimeoutSeconds);
         }
 
@@ -302,6 +304,13 @@ namespace Zoro.RpcHost
             RpcRequestPayload payload = RpcRequestPayload.Create(method, _params.ToString());
 
             JObject response = CreateResponse(request["id"]);
+
+            if (soloTest)
+            {
+                Interlocked.Increment(ref finishedPerSecond);
+                Interlocked.Increment(ref totalTasks);
+                return response;
+            }
 
             RpcTask task = new RpcTask
             {

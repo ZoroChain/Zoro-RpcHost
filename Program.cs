@@ -61,6 +61,7 @@ namespace Zoro.RpcHost
 
             int logLevel = 0;
             bool disableLog = false;
+            bool soloTest = false;
             for (int i = 0; i < args.Length; i++)
                 switch (args[i])
                 {
@@ -72,9 +73,13 @@ namespace Zoro.RpcHost
                     case "/logdetail":
                         logLevel = 1;
                         break;
+                    case "/s":
+                    case "-solo":
+                        soloTest = true;
+                        break;
                 }
 
-            Host = new RpcHost();
+            Host = new RpcHost(soloTest);
 
             Host.EnableLog(!disableLog, logLevel);
 
@@ -83,7 +88,10 @@ namespace Zoro.RpcHost
                 sslCert: Settings.Default.SslCert,
                 password: Settings.Default.SslCertPassword);
 
-            Host.ConnectToAgent(Settings.Default.AgentAddress, Settings.Default.AgentPort);
+            if (!soloTest)
+            {
+                Host.ConnectToAgent(Settings.Default.AgentAddress, Settings.Default.AgentPort);
+            }
         }
 
         static void OnStop()
