@@ -402,6 +402,13 @@ namespace Zoro.RpcHost
             .Configure(app =>
             {
                 app.UseResponseCompression();
+                app.Use(next =>
+                {
+                    return async context =>
+                    {
+                        await next(context);
+                    };
+                });
                 app.Run(ProcessAsync);
             })
             .ConfigureServices(services =>
