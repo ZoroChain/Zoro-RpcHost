@@ -111,8 +111,10 @@ namespace Zoro.RpcHost
                 if (logger == null)
                 {
                     DateTime now = DateTime.Now;
-                    string filename = $"rpchost_{now:yyyy-MM-dd}.log";
-                    logger = new Logger(filename);
+                    string log_dictionary = "rpchost_logs";
+                    Directory.CreateDirectory(log_dictionary);
+                    string path = Path.Combine(log_dictionary, $"{now:yyyy-MM-dd}.log");
+                    logger = new Logger(path);
                 }
             }
             else
