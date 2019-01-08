@@ -163,25 +163,6 @@ namespace Zoro.RpcHost
             return response;
         }
 
-        private static JObject GetRelayResult(RelayResultReason reason)
-        {
-            switch (reason)
-            {
-                case RelayResultReason.Succeed:
-                    return true;
-                case RelayResultReason.AlreadyExists:
-                    throw new RpcException(-501, "Block or transaction already exists and cannot be sent repeatedly.");
-                case RelayResultReason.OutOfMemory:
-                    throw new RpcException(-502, "The memory pool is full and no more transactions can be sent.");
-                case RelayResultReason.UnableToVerify:
-                    throw new RpcException(-503, "The block cannot be validated.");
-                case RelayResultReason.Invalid:
-                    throw new RpcException(-504, "Block or transaction validation failed.");
-                default:
-                    throw new RpcException(-500, "Unknown error.");
-            }
-        }
-
         private UInt160 GetChainHash(JObject param)
         {
             string hashString = param.AsString();
