@@ -6,6 +6,6 @@
     "SslCert": "",
     "SslCertPassword": "",
     "TimeoutSeconds": 30,
-    "MinThreadCount": 100
+    "MinThreadCount": 0
   }
 }
