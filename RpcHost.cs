@@ -44,7 +44,8 @@ namespace Zoro.RpcHost
         private int finishedPerSecond = 0;      // 上一秒完成的任务数量
         private int peakFinishedPerSecond = 0;  // 每秒完成的任务数量的峰值
         private int waitingTasks = 0;           // 正在处理中的任务数量
-        private int totalTasks = 0;             // 累积完成的任务总数量
+        private int totalTasks = 0;             // 累积接受的任务总数量
+        private int totalFinishedTasks = 0;     // 累积完成的任务总数量
         private int timeoutTasks = 0;           // 累积的超时任务总数
         private int taskId = 0;
 
@@ -69,7 +70,7 @@ namespace Zoro.RpcHost
                 while (!cts.Token.IsCancellationRequested)
                 {
                     Console.Clear();
-                    Console.WriteLine($"Tasks:{finishedPerSecond}/{totalTasks}, waiting:{waitingTasks}, peak:{peakFinishedPerSecond}, timeout:{timeoutTasks}, longest:{TimeSpan.FromTicks(longestTicks)}");
+                    Console.WriteLine($"Tasks:{finishedPerSecond}/{totalTasks}/{totalFinishedTasks}, waiting:{waitingTasks}, peak:{peakFinishedPerSecond}, timeout:{timeoutTasks}, longest:{TimeSpan.FromTicks(longestTicks)}");
                     // 更新上一秒完成任务数量的峰值
                     if (finishedPerSecond > peakFinishedPerSecond)
                     {
@@ -176,6 +177,8 @@ namespace Zoro.RpcHost
 
         private async Task ProcessAsync(HttpContext context)
         {
+            Interlocked.Increment(ref totalTasks);
+
             context.Response.Headers["Access-Control-Allow-Origin"] = "*";
             context.Response.Headers["Access-Control-Allow-Methods"] = "GET, POST";
             context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type";
@@ -291,7 +294,7 @@ namespace Zoro.RpcHost
             if (soloTest)
             {
                 Interlocked.Increment(ref finishedPerSecond);
-                Interlocked.Increment(ref totalTasks);
+                Interlocked.Increment(ref totalFinishedTasks);
                 return response;
             }
 
@@ -320,7 +323,7 @@ namespace Zoro.RpcHost
                 TimeSpan span = DateTime.UtcNow - beginTime;
 
                 Interlocked.Increment(ref finishedPerSecond);
-                Interlocked.Increment(ref totalTasks);
+                Interlocked.Increment(ref totalFinishedTasks);
 
                 // 更新单个任务最久完成时间
                 if (span.Ticks > longestTicks)
