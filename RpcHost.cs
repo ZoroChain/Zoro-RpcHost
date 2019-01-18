@@ -288,12 +288,12 @@ namespace Zoro.RpcHost
 
             JObject response = CreateResponse(request["id"]);
 
-            if (soloTest)
-            {
-                Interlocked.Increment(ref finishedPerSecond);
-                Interlocked.Increment(ref totalTasks);
-                return response;
-            }
+            //if (soloTest)
+            //{
+            //    Interlocked.Increment(ref finishedPerSecond);
+            //    Interlocked.Increment(ref totalTasks);
+            //    return response;
+            //}
 
             RpcTask task = new RpcTask
             {
@@ -308,14 +308,24 @@ namespace Zoro.RpcHost
             {
                 Interlocked.Increment(ref waitingTasks);
 
-                Message msg = Message.Create("rpc-request", payload.ToArray());
-                client.Send(msg.ToArray());
+                if (!soloTest)
+                {
+                    Message msg = Message.Create("rpc-request", payload.ToArray());
+                    client.Send(msg.ToArray());
 
-                Log($"send:{task.TaskId}, method:{payload.Method}", 1);
+                    Log($"send:{task.TaskId}, method:{payload.Method}", 1);
+                }
 
                 DateTime beginTime = DateTime.UtcNow;
 
-                signaled = task.ResetEvent.WaitOne(timeoutSpan);
+                if (soloTest)
+                {
+                    Thread.Sleep(10);
+                }
+                else
+                {
+                    signaled = task.ResetEvent.WaitOne(timeoutSpan);
+                }
 
                 TimeSpan span = DateTime.UtcNow - beginTime;
 
