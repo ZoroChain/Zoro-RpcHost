@@ -433,6 +433,8 @@ namespace Zoro.RpcHost
 
         void client_ServerDataReceived(object sender, TcpServerDataReceivedEventArgs e)
         {
+            Log($"recv data, length:{e.DataLength}", 1);
+
             byte[] data = e.Data.Skip(e.DataOffset).Take(e.DataLength).ToArray();
             Message msg = data.AsSerializable<Message>();
 
