@@ -177,7 +177,8 @@ namespace Zoro.RpcHost
 
         private async Task ProcessAsync(HttpContext context)
         {
-            Interlocked.Increment(ref totalTasks);
+            if (logLevel == 0)
+                Interlocked.Increment(ref totalTasks);
 
             context.Response.Headers["Access-Control-Allow-Origin"] = "*";
             context.Response.Headers["Access-Control-Allow-Methods"] = "GET, POST";
@@ -309,7 +310,8 @@ namespace Zoro.RpcHost
             bool signaled = false;
             if (RpcTasks.TryAdd(payload.Guid, task))
             {
-                Interlocked.Increment(ref waitingTasks);
+                if (logLevel == 0)
+                    Interlocked.Increment(ref waitingTasks);
 
                 Message msg = Message.Create("rpc-request", payload.ToArray());
                 client.Send(msg.ToArray());
@@ -322,13 +324,16 @@ namespace Zoro.RpcHost
 
                 TimeSpan span = DateTime.UtcNow - beginTime;
 
-                Interlocked.Increment(ref finishedPerSecond);
-                Interlocked.Increment(ref totalFinishedTasks);
-
-                // 更新单个任务最久完成时间
-                if (span.Ticks > longestTicks)
+                if (logLevel == 0)
                 {
-                    Interlocked.Exchange(ref longestTicks, span.Ticks);
+                    Interlocked.Increment(ref finishedPerSecond);
+                    Interlocked.Increment(ref totalFinishedTasks);
+
+                    // 更新单个任务最久完成时间
+                    if (span.Ticks > longestTicks)
+                    {
+                        Interlocked.Exchange(ref longestTicks, span.Ticks);
+                    }
                 }
 
                 Log($"recv:{task.TaskId}, time:{span:hh\\:mm\\:ss\\.ff}", 1);
@@ -338,10 +343,13 @@ namespace Zoro.RpcHost
             if (!signaled)
             {
                 RpcTasks.TryRemove(payload.Guid, out RpcTask _);
-                
-                Interlocked.Decrement(ref waitingTasks);
 
-                Interlocked.Increment(ref timeoutTasks);
+                if (logLevel == 0)
+                {
+                    Interlocked.Decrement(ref waitingTasks);
+
+                    Interlocked.Increment(ref timeoutTasks);
+                }
 
                 _CreateErrorResponse(task.Response, 0, $"rpc request is time-out, method:{payload.Method}");
             }
@@ -456,7 +464,8 @@ namespace Zoro.RpcHost
         {
             if (RpcTasks.TryRemove(payload.Guid, out RpcTask task))
             {
-                Interlocked.Decrement(ref waitingTasks);
+                if (logLevel == 0)
+                    Interlocked.Decrement(ref waitingTasks);
 
                 task.Response["result"] = payload.Result;
                 task.ResetEvent.Set();
@@ -467,7 +476,8 @@ namespace Zoro.RpcHost
         {
             if (RpcTasks.TryRemove(payload.Guid, out RpcTask task))
             {
-                Interlocked.Decrement(ref waitingTasks);
+                if (logLevel == 0)
+                    Interlocked.Decrement(ref waitingTasks);
 #if DEBUG
                 _CreateErrorResponse(task.Response, payload.HResult, payload.Message, payload.StackTrace);
 #else
