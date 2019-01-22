@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.IO;
 using System.IO.Compression;
@@ -15,10 +14,10 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
+using Microsoft.AspNetCore.Server.Kestrel.Transport.Abstractions.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Zoro.IO;
 using Zoro.IO.Json;
-using Zoro.Ledger;
 using Zoro.Network.RPC;
 using Zoro.Network.P2P;
 using Cowboy.Sockets;
@@ -376,23 +375,32 @@ namespace Zoro.RpcHost
                 Log($"MaxThreadCount:{maxWorkerThreads} {maxCPortThreads}");
             }
 
-            host = new WebHostBuilder().UseKestrel(options => options.Listen(bindAddress, port, listenOptions =>
+            host = new WebHostBuilder().UseKestrel(options =>
             {
-                if (string.IsNullOrEmpty(sslCert)) return;
-                listenOptions.UseHttps(sslCert, password, httpsConnectionAdapterOptions =>
+                //options.ApplicationSchedulingMode = SchedulingMode.Inline;
+                //options.Limits.MaxRequestBufferSize = 2048 * 1024;
+                options.Limits.MaxConcurrentConnections = minThreadCount;
+                options.Limits.MaxConcurrentUpgradedConnections = minThreadCount;
+
+                options.Listen(bindAddress, port, listenOptions =>
                 {
-                    if (trustedAuthorities is null || trustedAuthorities.Length == 0)
-                        return;
-                    httpsConnectionAdapterOptions.ClientCertificateMode = ClientCertificateMode.RequireCertificate;
-                    httpsConnectionAdapterOptions.ClientCertificateValidation = (cert, chain, err) =>
+                    if (string.IsNullOrEmpty(sslCert)) return;
+                    //listenOptions.NoDelay = false;
+                    listenOptions.UseHttps(sslCert, password, httpsConnectionAdapterOptions =>
                     {
-                        if (err != SslPolicyErrors.None)
-                            return false;
-                        X509Certificate2 authority = chain.ChainElements[chain.ChainElements.Count - 1].Certificate;
-                        return trustedAuthorities.Contains(authority.Thumbprint);
-                    };
+                        if (trustedAuthorities is null || trustedAuthorities.Length == 0)
+                            return;
+                        httpsConnectionAdapterOptions.ClientCertificateMode = ClientCertificateMode.RequireCertificate;
+                        httpsConnectionAdapterOptions.ClientCertificateValidation = (cert, chain, err) =>
+                        {
+                            if (err != SslPolicyErrors.None)
+                                return false;
+                            X509Certificate2 authority = chain.ChainElements[chain.ChainElements.Count - 1].Certificate;
+                            return trustedAuthorities.Contains(authority.Thumbprint);
+                        };
+                    });
                 });
-            }))
+            })
             .Configure(app =>
             {
                 app.UseResponseCompression();
