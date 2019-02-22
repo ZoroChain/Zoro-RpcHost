@@ -275,6 +275,14 @@ namespace Zoro.RpcHost
 
                 return Process(context, request, method, _params);
             }
+            catch (FormatException)
+            {
+                return CreateErrorResponse(request["id"], -32602, "Invalid params");
+            }
+            catch (IndexOutOfRangeException)
+            {
+                return CreateErrorResponse(request["id"], -32602, "Invalid params");
+            }
             catch (Exception ex)
             {
 #if DEBUG
